@@ -7,7 +7,14 @@ Produto irmão do SubPack (repositório `CardPacks`): mesma stack, mesmo login
 com a Twitch, mesmo jeito de servir o overlay. O desenho completo e as etapas
 estão em [`ARQUITETURA.md`](ARQUITETURA.md).
 
-## Rodar
+## Rodar no Windows (jeito rápido)
+
+Com o repositório clonado, dê dois cliques em **`rodar-local.bat`**. Ele confere
+o Node, instala as dependências, pede o Client ID e o segredo do app da Twitch
+(só na primeira vez), sobe o servidor e abre o navegador em `/entrar`.
+Para parar: **Ctrl+C** na janela.
+
+## Rodar (qualquer sistema)
 
 ```bash
 npm install
