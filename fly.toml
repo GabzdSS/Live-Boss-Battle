@@ -1,0 +1,43 @@
+# Deploy no Fly.io. Regiao gru = Sao Paulo: a latencia importa porque o
+# overlay anima no OBS da streamer em tempo real.
+app = "boss-raid"
+primary_region = "gru"
+
+[build]
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+
+  # ATENCAO - estes tres valores nao sao detalhe de custo, sao o que mantem o
+  # produto funcionando:
+  #
+  # auto_stop_machines = false  porque o app mantem conexoes vivas com a Twitch
+  #   (EventSub e chat de cada canal). Se a maquina dormisse por falta de
+  #   trafego HTTP, os golpes do chat parariam de chegar no chefão no meio da live e ninguem
+  #   perceberia ate um viewer reclamar.
+  #
+  # min/max = 1 porque o supervisor guarda as conexoes de cada canal em
+  #   memoria. Com duas maquinas, as DUAS abririam EventSub e chat do mesmo
+  #   canal: cada golpe contaria em dobro e o bot falaria duas vezes.
+  #   Escalar horizontalmente exige dividir os canais entre as maquinas antes.
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+[http_service.concurrency]
+  type = "requests"
+  soft_limit = 200
+  hard_limit = 250
+
+[checks.saude]
+  type = "http"
+  port = 3000
+  path = "/saude"
+  interval = "30s"
+  timeout = "5s"
+  grace_period = "20s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

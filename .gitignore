@@ -1,0 +1,7 @@
+node_modules/
+data/
+.env
+.env.local
+
+# uploads locais (imagens do chefao; vao pro storage em producao)
+storage/

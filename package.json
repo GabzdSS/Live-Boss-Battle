@@ -1,0 +1,28 @@
+{
+  "name": "boss-raid",
+  "version": "0.1.0",
+  "description": "SaaS de chefão no overlay da Twitch: o chat derrota o boss com pontos do canal e bits.",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "migrate": "node src/db/migrate.js",
+    "test": "node --test",
+    "gerar-chaves": "node scripts/gerar-chaves.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "pg": "^8.23.0",
+    "socket.io": "^4.7.5",
+    "tmi.js": "^1.8.5",
+    "ws": "^8.18.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8"
+  }
+}

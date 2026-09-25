@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Assinatura — Boss Raid</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/app/base.css" />
+<style>
+  .topo { border-bottom: 1px solid var(--line); background: var(--panel); }
+  .topo-interno { max-width: 900px; margin: 0 auto; padding: 12px 24px; display: flex; align-items: center; gap: 18px; }
+  .marca { font-family: var(--font-display); font-size: 14px; }
+  .marca span { color: var(--accent); }
+  .abas { display: flex; gap: 4px; }
+  .abas a { color: var(--muted); text-decoration: none; font-size: 14px; font-weight: 500; padding: 7px 13px; border-radius: var(--radius-sm); }
+  .abas a:hover { background: var(--panel-alto); color: var(--text); }
+  .abas a.ativa { background: var(--accent-soft); color: var(--accent); }
+
+  main { max-width: 900px; margin: 0 auto; padding: 26px 24px 60px; display: grid; gap: 18px; }
+  h1 { font-size: 21px; margin: 0; }
+  h2 { font-size: 12.5px; letter-spacing: .07em; text-transform: uppercase; color: var(--faint); margin: 0 0 14px; font-weight: 600; }
+
+  .preco { font-family: var(--font-display); font-size: 30px; color: var(--accent); line-height: 1; }
+  .preco small { font-family: var(--font-ui); font-size: 13px; color: var(--muted); font-weight: 500; }
+
+  .opcoes { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 4px; }
+  @media (max-width: 680px) { .opcoes { grid-template-columns: 1fr; } }
+  .opcao { border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; display: grid; gap: 10px; align-content: start; }
+  .opcao h3 { margin: 0; font-size: 15px; }
+  .opcao p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
+  .opcao.destaque { border-color: rgba(143,212,95,.4); background: var(--accent-soft); }
+
+  input[type=email] {
+    background: #0c0a13; border: 1px solid var(--line); color: var(--text); border-radius: var(--radius-sm);
+    padding: 10px 12px; font: inherit; font-size: 14px; width: 100%;
+  }
+  .dica { color: var(--faint); font-size: 12.5px; line-height: 1.55; margin: 0; }
+  .lista { margin: 0; padding: 0; display: grid; gap: 9px; }
+  .lista li { list-style: none; color: var(--muted); font-size: 13.5px; padding-left: 20px; position: relative; line-height: 1.5; }
+  .lista li::before { content: "✓"; position: absolute; left: 2px; color: var(--accent); }
+
+  .aviso-flutuante {
+    position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); z-index: 50;
+    background: var(--panel-alto); border: 1px solid var(--line); border-radius: var(--radius-sm);
+    padding: 12px 18px; font-size: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.45); max-width: 90vw;
+  }
+  .aviso-flutuante.ruim { border-color: rgba(255,107,107,.5); color: #ffb3b3; }
+  .aviso-flutuante.bom { border-color: rgba(111,212,138,.45); color: var(--ok); }
+</style>
+</head>
+<body>
+  <header class="topo">
+    <div class="topo-interno">
+      <div class="marca">BOSS<span>RAID</span></div>
+      <nav class="abas">
+        <a href="/painel">Início</a>
+        <a href="/painel/assinatura" class="ativa">Assinatura</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="conteudo"><p class="dica">Carregando…</p></main>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const data = (iso) => (iso ? new Date(iso).toLocaleDateString("pt-BR") : "—");
+const reais = (v) => Number(v).toFixed(2).replace(".", ",");
+
+function avisar(mensagem, tipo = "bom") {
+  const caixa = document.createElement("div");
+  caixa.className = `aviso-flutuante ${tipo}`;
+  caixa.textContent = mensagem;
+  document.body.appendChild(caixa);
+  setTimeout(() => caixa.remove(), 5000);
+}
+
+async function api(caminho, opcoes = {}) {
+  const res = await fetch(caminho, { headers: { "Content-Type": "application/json" }, ...opcoes });
+  const dados = await res.json().catch(() => ({}));
+  if (!res.ok || dados.ok === false) throw new Error(dados.error || `Erro ${res.status}`);
+  return dados;
+}
+
+async function carregar() {
+  const d = await api("/api/painel/assinatura");
+  const { acesso, assinatura, preco, provedor } = d;
+  const selo = acesso.ativo ? (acesso.avisar ? "selo-aviso" : "selo-ok") : "selo-ruim";
+
+  $("#conteudo").innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <h1>Assinatura</h1>
+      <span class="selo ${selo}" style="margin-left:auto">${esc(acesso.rotulo)}</span>
+    </div>
+
+    <section class="cartao">
+      <h2>Seu plano</h2>
+      <div style="display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap">
+        <div class="preco">R$ ${reais(preco)}<small> /mês</small></div>
+        <ul class="lista" style="margin-left:auto;min-width:260px">
+          <li>Chefão no overlay, derrotado com pontos do canal e bits</li>
+          <li>Seu chefão, sua arte, suas regras de dano e de tempo</li>
+          <li>Ranking ao vivo, anúncio no chat e hall da fama</li>
+        </ul>
+      </div>
+      ${assinatura?.renovaEm ? `<p class="dica" style="margin-top:14px">Válido até <b>${data(assinatura.renovaEm)}</b>${assinatura.ultimoPagamentoEm ? ` · último pagamento em ${data(assinatura.ultimoPagamentoEm)}` : ""}.</p>` : ""}
+      ${assinatura?.status === "trialing" && assinatura.trialAte ? `<p class="dica" style="margin-top:14px">Seu teste grátis vai até <b>${data(assinatura.trialAte)}</b>. Assinando antes disso, a cobrança só começa depois.</p>` : ""}
+    </section>
+
+    ${provedor.configurado ? `
+    <div class="opcoes">
+      <section class="opcao destaque">
+        <h3>Pix — 1 mês</h3>
+        <p>Pague agora e seu canal fica no ar por mais 30 dias. Sem cartão, sem renovação automática: quando acabar, você paga de novo.</p>
+        <button class="btn" data-forma="pix">Pagar com Pix</button>
+      </section>
+
+      <section class="opcao">
+        <h3>Cartão — renova sozinho</h3>
+        <p>O Mercado Pago cobra todo mês e seu canal nunca para por esquecimento. Pode cancelar quando quiser.</p>
+        <input type="email" id="email" value="${esc(d.email ?? "")}" placeholder="e-mail para a cobrança" />
+        <button class="btn" data-forma="cartao">Assinar no cartão</button>
+      </section>
+    </div>
+    <p class="dica">Pagamento processado pelo ${esc(provedor.exibicao)}. Seus dados de cartão são digitados lá — nunca passam por aqui.</p>
+    ` : `
+    <section class="cartao" style="border-color:rgba(230,181,74,.35)">
+      <h2 style="color:var(--warn)">Cobrança ainda não configurada</h2>
+      <p class="dica">O pagamento automático não está ligado neste servidor. Enquanto isso, a ativação é feita manualmente.</p>
+    </section>`}
+
+    ${assinatura?.temAssinaturaNoProvedor && acesso.estado !== "cancelada-com-prazo" ? `
+    <section class="cartao">
+      <h2>Cancelar</h2>
+      <p class="dica" style="margin-bottom:14px">Cancelando, seu canal continua funcionando até o fim do período já pago. Depois disso, as raids param — mas o hall da fama do seu canal continua no ar.</p>
+      <button class="btn btn-fantasma" id="cancelar">Cancelar assinatura</button>
+    </section>` : ""}
+
+    <section class="cartao" style="border-color:rgba(255,107,107,.25)">
+      <h2 style="color:var(--bad)">Excluir minha conta</h2>
+      <p class="dica" style="margin-bottom:14px">
+        Apaga de vez o canal, seus chefões, o histórico de raids e <b>o ranking de todos os seus viewers</b>.
+        Também revogamos o acesso que você deu na Twitch. Não tem como desfazer.
+      </p>
+      <button class="btn btn-fantasma" id="excluir" style="color:var(--bad)">Excluir conta e todos os dados</button>
+    </section>`;
+
+  document.querySelectorAll("[data-forma]").forEach((botao) => {
+    botao.onclick = async () => {
+      botao.disabled = true;
+      botao.textContent = "Abrindo checkout…";
+      try {
+        const corpo = { forma: botao.dataset.forma, email: $("#email")?.value };
+        const { url } = await api("/api/painel/assinatura/checkout", { method: "POST", body: JSON.stringify(corpo) });
+        location.href = url;
+      } catch (err) {
+        avisar(err.message, "ruim");
+        botao.disabled = false;
+        botao.textContent = botao.dataset.forma === "pix" ? "Pagar com Pix" : "Assinar no cartão";
+      }
+    };
+  });
+
+  const excluir = $("#excluir");
+  if (excluir) {
+    excluir.onclick = async () => {
+      const login = prompt(`Isso apaga tudo, inclusive a coleção dos seus viewers, e não tem volta.
+
+Digite "${d.login ?? ""}" para confirmar:`);
+      if (!login) return;
+      try {
+        await api("/api/painel/conta/excluir", { method: "POST", body: JSON.stringify({ confirmacao: login }) });
+        location.href = "/?conta=excluida";
+      } catch (err) {
+        avisar(err.message, "ruim");
+      }
+    };
+  }
+
+  const cancelar = $("#cancelar");
+  if (cancelar) {
+    cancelar.onclick = async () => {
+      if (!confirm("Cancelar a assinatura? Seu canal funciona até o fim do período já pago.")) return;
+      try {
+        await api("/api/painel/assinatura/cancelar", { method: "POST", body: "{}" });
+        avisar("Assinatura cancelada.");
+        carregar();
+      } catch (err) {
+        avisar(err.message, "ruim");
+      }
+    };
+  }
+}
+
+// Volta do checkout do Mercado Pago: o webhook é quem confirma de verdade,
+// então aqui só explicamos a espera em vez de mentir "pago com sucesso".
+const retorno = new URLSearchParams(location.search).get("retorno");
+if (retorno === "pix") avisar("Pagamento recebido pelo Mercado Pago. Assim que ele confirmar, seu acesso é liberado (costuma ser em segundos).");
+if (retorno === "cartao") avisar("Assinatura enviada. A confirmação do Mercado Pago chega em instantes.");
+if (retorno === "falhou") avisar("O pagamento não foi concluído. Você pode tentar de novo.", "ruim");
+
+carregar().catch((err) => {
+  if (String(err.message).includes("login")) return (location.href = "/entrar");
+  $("#conteudo").innerHTML = `<p class="dica">Não consegui carregar: ${esc(err.message)}</p>`;
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+node_modules
+data
+storage
+.git
+.env
+.env.local
+*.md
+scratchpad
+test

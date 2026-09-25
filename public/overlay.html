@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Boss Raid - Overlay</title>
+  <style>
+    /* Fundo transparente: o OBS desenha so o que estiver aqui dentro. */
+    html, body { margin: 0; background: transparent; overflow: hidden; }
+  </style>
+</head>
+<body>
+  <!-- O chefao, a barra de vida e o ranking chegam na etapa 4. Por enquanto a
+       fonte so conecta, pra luz "Overlay no OBS" do painel acender. -->
+  <div id="stage"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/overlay.js"></script>
+</body>
+</html>

@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Painel — Boss Raid</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/app/base.css" />
+<style>
+  .topo { border-bottom: 1px solid var(--line); background: var(--panel); }
+  .topo-interno { max-width: 1040px; margin: 0 auto; padding: 14px 24px; display: flex; align-items: center; gap: 14px; }
+  .marca { font-family: var(--font-display); font-size: 15px; letter-spacing: 0.4px; }
+  .marca span { color: var(--accent); }
+  .eu { margin-left: auto; display: flex; align-items: center; gap: 10px; font-size: 14px; }
+  .eu img { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--line); }
+
+  main { max-width: 1040px; margin: 0 auto; padding: 26px 24px 60px; display: grid; gap: 18px; }
+  h1 { font-size: 21px; margin: 4px 0 0; font-weight: 700; }
+  h2 { font-size: 13px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--faint); margin: 0 0 14px; font-weight: 600; }
+
+  .linha { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .grade { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+
+  .url { display: flex; gap: 8px; margin-top: 10px; }
+  .url input {
+    flex: 1; min-width: 0; background: #0c0a13; border: 1px solid var(--line); color: var(--text);
+    border-radius: var(--radius-sm); padding: 11px 13px; font-family: var(--font-mono); font-size: 12.5px;
+  }
+  .dica { color: var(--faint); font-size: 12.5px; line-height: 1.55; margin: 9px 0 0; }
+
+  .passos { counter-reset: passo; display: grid; gap: 14px; margin: 0; padding: 0; }
+  .passo { list-style: none; display: grid; grid-template-columns: 26px 1fr; gap: 12px; align-items: start; }
+  .passo::before {
+    counter-increment: passo; content: counter(passo);
+    width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
+    background: var(--accent-soft); color: var(--accent); font-size: 12.5px; font-weight: 700;
+  }
+  .passo.feito::before { content: "✓"; background: rgba(111, 212, 138, 0.16); color: var(--ok); }
+  .passo.problema::before { content: "!"; background: rgba(255, 107, 107, 0.14); color: var(--bad); }
+  .passo > div > b { display: block; margin-bottom: 3px; }
+  .passo p { margin: 0; color: var(--muted); font-size: 13.5px; line-height: 1.5; }
+
+  .luzes { display: grid; gap: 10px; }
+  .luz { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+  .luz i { width: 9px; height: 9px; border-radius: 50%; background: var(--faint); flex: none; }
+  .luz.ok i { background: var(--ok); }
+  .luz.ruim i { background: var(--bad); }
+  .luz small { color: var(--faint); margin-left: auto; font-family: var(--font-mono); font-size: 11.5px; text-align: right; }
+
+  .feed { display: grid; gap: 8px; max-height: 320px; overflow: auto; }
+  .feed-item { display: flex; gap: 10px; align-items: baseline; font-size: 13.5px; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+  .feed-item time { color: var(--faint); font-family: var(--font-mono); font-size: 11.5px; flex: none; }
+  .feed-vazio { color: var(--faint); font-size: 13.5px; }
+
+  .emconstrucao { border-style: dashed; opacity: 0.75; }
+  .emconstrucao p { color: var(--faint); font-size: 13.5px; line-height: 1.55; margin: 0; }
+
+  .carregando { color: var(--faint); padding: 40px; text-align: center; }
+</style>
+</head>
+<body>
+  <header class="topo">
+    <div class="topo-interno">
+      <div class="marca">BOSS<span>RAID</span></div>
+      <div class="eu" id="eu"></div>
+    </div>
+  </header>
+
+  <main id="conteudo"><div class="carregando">Carregando seu canal…</div></main>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const $ = (sel) => document.querySelector(sel);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const hora = (d) => new Date(d).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+
+const NOMES_INSCRICAO = {
+  "channel.channel_points_custom_reward_redemption.add": "Resgates de pontos",
+  "channel.cheer": "Cheers de bits",
+};
+
+/** Uma linha do feed, a partir do que a Twitch mandou. */
+function descreverEvento(kind, p) {
+  if (kind === "twitch:resgate") return `<b>${esc(p.username)}</b> resgatou <b>${esc(p.rewardTitulo)}</b> (${esc(p.custo)} pontos)`;
+  if (kind === "twitch:cheer") return `<b>${esc(p.username)}</b> mandou <b>${esc(p.bits)} bits</b>`;
+  return esc(kind);
+}
+
+function desenharFeed(eventos) {
+  const alvo = $("#feed");
+  if (!alvo) return;
+  alvo.innerHTML = eventos.length
+    ? eventos.map((e) => `<div class="feed-item"><time>${hora(e.created_at)}</time><span>${descreverEvento(e.kind, e.payload)}</span></div>`).join("")
+    : `<p class="feed-vazio">Nada ainda. Resgates de pontos e cheers do seu canal aparecem aqui em tempo real.</p>`;
+}
+
+function luz(rotulo, ok, detalhe = "") {
+  return `<div class="luz ${ok ? "ok" : "ruim"}"><i></i><span>${esc(rotulo)}</span><small>${esc(detalhe)}</small></div>`;
+}
+
+async function carregar() {
+  const [eu, status, feed] = await Promise.all([
+    fetch("/api/eu").then((r) => r.json()),
+    fetch("/api/painel/status").then((r) => r.json()).catch(() => null),
+    fetch("/api/painel/eventos?limite=30").then((r) => r.json()).catch(() => ({ eventos: [] })),
+  ]);
+
+  if (!eu.autenticado) return (location.href = "/entrar");
+  const { canal, twitch } = eu;
+
+  $("#eu").innerHTML = `
+    ${canal.avatarUrl ? `<img src="${esc(canal.avatarUrl)}" alt="" />` : ""}
+    <span>${esc(canal.displayName)}</span>
+    <button class="btn btn-fantasma" id="sair" style="padding:7px 12px">Sair</button>`;
+  $("#sair").onclick = async () => {
+    await fetch("/auth/sair", { method: "POST" });
+    location.href = "/entrar";
+  };
+
+  const acesso = status?.acesso ?? {};
+  const conexao = status?.conexao ?? {};
+  const classeSelo = acesso.ativo ? (acesso.avisar ? "selo-aviso" : "selo-ok") : "selo-ruim";
+  const inscricoes = Object.entries(conexao.inscricoes ?? {});
+  const semPermissao = inscricoes.some(([, estado]) => estado.startsWith("sem permissao"));
+  const precisaReconectar = twitch.precisaReconectar || twitch.escoposFaltando?.length;
+
+  $("#conteudo").innerHTML = `
+    <div class="linha">
+      <h1>Canal de ${esc(canal.displayName)}</h1>
+      <span class="selo ${classeSelo}" style="margin-left:auto">${esc(acesso.rotulo ?? "—")}</span>
+    </div>
+
+    ${precisaReconectar ? `
+    <section class="cartao" style="border-color:rgba(255,107,107,.35)">
+      <h2 style="color:var(--bad)">Conexão com a Twitch precisa ser refeita</h2>
+      <p class="dica" style="color:var(--muted)">${twitch.escoposFaltando?.length && !twitch.precisaReconectar
+        ? "Esta versão precisa de uma permissão nova da Twitch."
+        : "Enquanto não reconectar, resgates e cheers não chegam no chefão e o bot fica fora do chat."}</p>
+      <div style="margin-top:14px"><a class="btn btn-twitch" href="/auth/twitch">Reconectar minha conta</a></div>
+    </section>` : ""}
+
+    <section class="cartao">
+      <h2>Colocar no ar</h2>
+      <ol class="passos">
+        <li class="passo feito">
+          <div><b>Conta da Twitch conectada</b>
+          <p>Como <span class="mono">${esc(canal.login)}</span>. O bot fala no chat com essa conta.</p></div>
+        </li>
+        <li class="passo${semPermissao ? " problema" : inscricoes.length && inscricoes.every(([, e]) => e === "ok") ? " feito" : ""}">
+          <div><b>Pontos do canal e bits liberados</b>
+          <p>${semPermissao
+            ? "A Twitch recusou: pontos do canal e bits só existem para canais <b>Afiliados ou Parceiros</b>. Enquanto isso, dá pra usar o modo de teste."
+            : "O canal precisa ser Afiliado ou Parceiro da Twitch. Assim que a conexão subir, isso aqui fica verde."}</p></div>
+        </li>
+        <li class="passo${status?.overlaysConectados ? " feito" : ""}">
+          <div><b>Colar o overlay no OBS</b>
+          <p>Fontes → <b>Navegador</b> → cole a URL abaixo. Largura 1920, altura 1080, fundo já é transparente.</p>
+          <div class="url">
+            <input id="urlOverlay" readonly value="${esc(canal.overlayUrl)}" />
+            <button class="btn" data-copiar="#urlOverlay">Copiar</button>
+          </div>
+          <p class="dica">Essa URL é secreta e só serve pro seu canal — não mostre ela na live.
+          ${status?.overlaysConectados ? `<b style="color:var(--ok)">Overlay conectado agora.</b>` : "Assim que o OBS abrir a página, isso aqui fica verde."}
+          <button class="btn btn-fantasma" id="novoToken" style="padding:4px 10px;font-size:12px;margin-left:6px">Gerar URL nova</button></p>
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <div class="grade">
+      <section class="cartao">
+        <h2>Conexão</h2>
+        <div class="luzes">
+          ${luz("Eventos da Twitch", conexao.eventsub, conexao.eventsub ? "conectado" : "desligado")}
+          ${inscricoes.map(([tipo, estado]) => luz(NOMES_INSCRICAO[tipo] ?? tipo, estado === "ok", estado)).join("")}
+          ${luz("Chat", conexao.chat, conexao.chat ? "conectado" : "desligado")}
+          ${luz("Overlay no OBS", status?.overlaysConectados > 0, `${status?.overlaysConectados ?? 0} aberto(s)`)}
+        </div>
+        ${conexao.ultimoErro ? `<p class="dica">Último erro: <span class="mono">${esc(conexao.ultimoErro)}</span></p>` : ""}
+      </section>
+
+      <section class="cartao">
+        <h2>Chegando da Twitch</h2>
+        <div class="feed" id="feed"></div>
+      </section>
+    </div>
+
+    <div class="grade">
+      <section class="cartao emconstrucao">
+        <h2>Chefão</h2>
+        <p>Vida, tempo limite, fases, recompensas e dano por bit. Chega nas próximas etapas.</p>
+      </section>
+      <section class="cartao emconstrucao">
+        <h2>Ao vivo</h2>
+        <p>Iniciar, pausar e encerrar a raid, ranking ao vivo e modo de teste. Chega nas próximas etapas.</p>
+      </section>
+      <section class="cartao">
+        <h2>Assinatura</h2>
+        <p class="dica" style="margin:0 0 12px">${esc(acesso.rotulo ?? "")}${
+          acesso.terminaEm ? ` · até ${new Date(acesso.terminaEm).toLocaleDateString("pt-BR")}` : ""}${
+          acesso.renovaEm ? ` · renova em ${new Date(acesso.renovaEm).toLocaleDateString("pt-BR")}` : ""}</p>
+        <a class="btn" href="/painel/assinatura">Gerenciar assinatura</a>
+      </section>
+    </div>`;
+
+  desenharFeed(feed.eventos ?? []);
+
+  document.querySelectorAll("[data-copiar]").forEach((botao) => {
+    botao.onclick = async () => {
+      const campo = $(botao.dataset.copiar);
+      campo.select();
+      try { await navigator.clipboard.writeText(campo.value); } catch { document.execCommand("copy"); }
+      const antes = botao.textContent;
+      botao.textContent = "Copiado!";
+      setTimeout(() => (botao.textContent = antes), 1400);
+    };
+  });
+
+  $("#novoToken").onclick = async () => {
+    if (!confirm("A URL atual para de funcionar e você vai precisar colar a nova no OBS. Continuar?")) return;
+    const r = await fetch("/api/painel/overlay/novo-token", { method: "POST" }).then((r) => r.json());
+    if (r.ok) $("#urlOverlay").value = r.overlayUrl;
+  };
+}
+
+// Feed ao vivo: o painel entra na sala do proprio canal pelo cookie de sessao.
+const socket = io({ query: { painel: "1" } });
+socket.on("twitch-evento", () => {
+  fetch("/api/painel/eventos?limite=30").then((r) => r.json()).then((d) => desenharFeed(d.eventos ?? []));
+});
+
+carregar().catch((err) => {
+  $("#conteudo").innerHTML = `<div class="carregando">Não consegui carregar o painel: ${esc(err.message)}</div>`;
+});
+// As luzes de conexao mudam sozinhas (reconexao, OBS abrindo): reconfere de tempos em tempos.
+setInterval(() => carregar().catch(() => {}), 15000);
+</script>
+</body>
+</html>

@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Entrar — Boss Raid</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/app/base.css" />
+<style>
+  body { display: grid; place-items: center; min-height: 100vh; padding: 24px; }
+  .caixa { width: min(460px, 100%); text-align: center; }
+  .logo { font-family: var(--font-display); font-size: 27px; line-height: 1.15; margin: 0 0 6px; }
+  .logo span { color: var(--accent); }
+  .pitch { color: var(--muted); margin: 0 0 28px; line-height: 1.55; font-size: 15px; }
+  .permissoes { margin-top: 26px; text-align: left; border-top: 1px solid var(--line); padding-top: 18px; }
+  .permissoes h2 { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); margin: 0 0 12px; font-weight: 600; }
+  .permissoes li { color: var(--muted); font-size: 13.5px; line-height: 1.5; margin-bottom: 9px; list-style: none; padding-left: 18px; position: relative; }
+  .permissoes li::before { content: "•"; position: absolute; left: 4px; color: var(--accent); }
+  .permissoes b { color: var(--text); font-weight: 600; }
+  .erro { background: rgba(255, 107, 107, 0.12); border: 1px solid rgba(255, 107, 107, 0.3); color: #ffb3b3; border-radius: var(--radius-sm); padding: 12px 14px; font-size: 14px; margin-bottom: 20px; text-align: left; }
+  .rodape { margin-top: 24px; font-size: 12.5px; color: var(--faint); line-height: 1.6; }
+</style>
+</head>
+<body>
+  <main class="caixa">
+    <h1 class="logo">BOSS<span>RAID</span></h1>
+    <p class="pitch">Um chefão aparece no seu overlay com barra de vida,<br />e o chat se junta pra derrubar ele com pontos do canal e bits.</p>
+
+    <div id="erro" class="erro" hidden></div>
+
+    <a class="btn btn-twitch" href="/auth/twitch" id="entrar">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4.3 3 3 6.5V19h4.2v2.5h2.4l2.4-2.5h3.5l4.8-4.8V3H4.3Zm14.4 10.4-2.8 2.8h-3.5l-2.4 2.4V16.2H6.6V4.6h12.1v8.8Zm-2.4-5.6v4.1h-1.6V7.8h1.6Zm-4.3 0v4.1h-1.6V7.8H12Z"/></svg>
+      Entrar com a Twitch
+    </a>
+
+    <section class="permissoes">
+      <h2>O que a Twitch vai perguntar, e por quê</h2>
+      <ul>
+        <li><b>Gerenciar recompensas de pontos do canal</b> — criamos "Ataque" e "Ataque Forte" no seu canal, ligamos só durante a raid e <b>devolvemos os pontos</b> de quem resgatar fora dela.</li>
+        <li><b>Ver cheers de bits</b> — cada bit vira dano no chefão.</li>
+        <li><b>Ler e escrever no chat</b> — o bot anuncia a raid, as fases e o ranking no final.</li>
+        <li><b>Seu e-mail</b> — só para falar com você sobre a assinatura e avisar se a conexão cair.</li>
+      </ul>
+      <ul>
+        <li class="faint">Não pedimos nada que mexa na sua transmissão, nos seus vídeos ou nas suas outras recompensas. Você pode revogar o acesso na Twitch quando quiser.</li>
+      </ul>
+    </section>
+
+    <p class="rodape">Ao entrar você começa com <b>14 dias grátis</b>, sem cartão.</p>
+  </main>
+
+<script>
+  const erro = new URLSearchParams(location.search).get("erro");
+  if (erro) {
+    const caixa = document.getElementById("erro");
+    caixa.textContent = erro;
+    caixa.hidden = false;
+  }
+  const voltar = new URLSearchParams(location.search).get("voltar");
+  if (voltar) document.getElementById("entrar").href = "/auth/twitch?voltar=" + encodeURIComponent(voltar);
+</script>
+</body>
+</html>

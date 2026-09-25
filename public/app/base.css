@@ -1,0 +1,91 @@
+/* Identidade compartilhada do produto: violeta, na familia da Twitch.
+   Dois roxos com papeis distintos, nao dois tons parecidos por acaso:
+     --accent (#b98cff) e claro, entao serve pra texto, icone e botao com
+       tinta escura por cima;
+     --twitch (#9146ff) e fundo, e so aparece onde a Twitch age - com texto
+       branco, que e o unico jeito dele passar em contraste.
+   Pra painel, login e site nao parecerem tres apps diferentes. */
+:root {
+  --bg: #0b0910;
+  --panel: #14111c;
+  --panel-alto: #1a1624;
+  --line: rgba(234, 232, 242, 0.09);
+  --text: #eae8f2;
+  --muted: #a49cb5;
+  --faint: #8b85a0;
+  --accent: #b98cff;
+  --accent-soft: rgba(185, 140, 255, 0.15);
+  --accent-ink: #160a26;
+  --ok: #6fd48a;
+  --warn: #e6b54a;
+  --bad: #ff6b6b;
+  --twitch: #9146ff;
+  --comum: #8a8272;
+  --rara: #3e9c8f;
+  --epica: #7b4fd6;
+  --lendaria: #c9a227;
+  --radius: 14px;
+  --radius-sm: 9px;
+  --font-ui: "Inter", system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Bungee", "Segoe UI Black", Impact, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--accent); }
+
+.btn {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 12px 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--panel-alto);
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+}
+.btn:hover { transform: translateY(-1px); border-color: rgba(234, 232, 242, 0.22); }
+.btn:active { transform: none; }
+.btn-twitch { background: var(--twitch); border-color: transparent; color: #fff; font-size: 16px; padding: 14px 22px; }
+.btn-twitch:hover { background: #7c3aed; }
+.btn-fantasma { background: transparent; color: var(--muted); }
+
+.selo {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+.selo-ok { background: rgba(111, 212, 138, 0.13); color: var(--ok); border-color: rgba(111, 212, 138, 0.25); }
+.selo-aviso { background: rgba(230, 181, 74, 0.13); color: var(--warn); border-color: rgba(230, 181, 74, 0.28); }
+.selo-ruim { background: rgba(255, 107, 107, 0.12); color: var(--bad); border-color: rgba(255, 107, 107, 0.26); }
+
+.cartao {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 22px;
+}
+
+.mono { font-family: var(--font-mono); font-size: 13px; }
+.muted { color: var(--muted); }
+.faint { color: var(--faint); }
