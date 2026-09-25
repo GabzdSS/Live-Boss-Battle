@@ -16,6 +16,16 @@ import * as channels from "../repos/channels.js";
 const sala = (channelId) => `canal:${channelId}`;
 
 let io = null;
+let aoConectar = null;
+
+/**
+ * Quem acabou de conectar precisa do estado inteiro na hora: o OBS recarrega
+ * a fonte do navegador quando quer (trocar de cena, reabrir o OBS), e o
+ * overlay nao pode ficar vazio esperando o proximo golpe.
+ */
+export function definirAoConectar(fn) {
+  aoConectar = fn;
+}
 
 export function iniciarSockets(httpServer) {
   io = new Server(httpServer, { cors: { origin: false } });
@@ -53,6 +63,7 @@ export function iniciarSockets(httpServer) {
   io.on("connection", (socket) => {
     socket.join(sala(socket.data.channelId));
     console.log(`[socket] ${socket.data.papel} conectado ao canal ${socket.data.login}`);
+    Promise.resolve(aoConectar?.(socket)).catch((err) => console.error("[socket] estado inicial:", err.message));
   });
 
   return io;

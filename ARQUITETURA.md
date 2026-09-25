@@ -222,8 +222,10 @@ hall da fama. Funciona no canal falso do `/dev/canal-de-teste`, sem Twitch.
 1. **Plataforma** — **pronta**: config/db/lib/oauth/sessão/supervisor/sockets/billing
    copiados do SubPack, escopos novos, EventSub de resgate + cheer chegando no
    feed do painel, overlay conectando por token, `/dev/canal-de-teste`.
-2. **Motor do chefão** (`boss.js`) com testes unitários, e a raid com fila,
-   timer e persistência.
+2. **Motor do chefão** — **pronto**: `boss.js` (dano, crítico, armadura, fases,
+   ranking) e `raid.js` (fila por canal, timer de fuga, pausa, persistência,
+   restauração no arranque), API `/api/painel/raid/*` com golpe de teste.
+   27 testes (`npm test`), incluindo 50 golpes simultâneos e reinício.
 3. **Twitch**: EventSub (resgate + cheer), `rewards.js` com o ciclo de vida
    e o reembolso, anúncios no chat.
 4. **Overlay** animado.

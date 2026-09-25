@@ -82,10 +82,22 @@ const NOMES_INSCRICAO = {
 };
 
 /** Uma linha do feed, a partir do que a Twitch mandou. */
+const MOTIVOS_FEED = {
+  "sem-raid": "sem raid ativa",
+  "nao-e-golpe": "não é recompensa da raid",
+  pausada: "raid pausada",
+  duplicado: "repetido, ignorado",
+};
+
 function descreverEvento(kind, p) {
-  if (kind === "twitch:resgate") return `<b>${esc(p.username)}</b> resgatou <b>${esc(p.rewardTitulo)}</b> (${esc(p.custo)} pontos)`;
-  if (kind === "twitch:cheer") return `<b>${esc(p.username)}</b> mandou <b>${esc(p.bits)} bits</b>`;
-  return esc(kind);
+  let texto = esc(kind);
+  if (kind === "twitch:resgate") texto = `<b>${esc(p.username)}</b> resgatou <b>${esc(p.rewardTitulo)}</b> (${esc(p.custo)} pontos)`;
+  if (kind === "twitch:cheer") texto = `<b>${esc(p.username)}</b> mandou <b>${esc(p.bits)} bits</b>`;
+  if (kind === "teste") texto = `<span class="faint">[teste]</span> <b>${esc(p.username)}</b> ${p.bits ? `mandou <b>${esc(p.bits)} bits</b>` : `usou <b>${esc(p.recompensa)}</b>`}`;
+  const r = p.resultado;
+  if (r?.ok) texto += ` → <b style="color:var(--accent)">${esc(r.dano)} de dano</b>${r.critico ? " <b style=\"color:var(--warn)\">CRÍTICO</b>" : ""}${r.derrotado ? " 🏆" : ""}`;
+  else if (r) texto += ` <span class="faint">· ${esc(MOTIVOS_FEED[r.motivo] ?? r.motivo)}</span>`;
+  return texto;
 }
 
 function desenharFeed(eventos) {
@@ -152,7 +164,9 @@ async function carregar() {
           <div><b>Pontos do canal e bits liberados</b>
           <p>${semPermissao
             ? "A Twitch recusou: pontos do canal e bits só existem para canais <b>Afiliados ou Parceiros</b>. Enquanto isso, dá pra usar o modo de teste."
-            : "O canal precisa ser Afiliado ou Parceiro da Twitch. Assim que a conexão subir, isso aqui fica verde."}</p></div>
+            : inscricoes.length && inscricoes.every(([, e]) => e === "ok")
+              ? "Resgates de pontos e cheers chegando da Twitch."
+              : "O canal precisa ser Afiliado ou Parceiro da Twitch. Assim que a conexão subir, isso aqui fica verde."}</p></div>
         </li>
         <li class="passo${status?.overlaysConectados ? " feito" : ""}">
           <div><b>Colar o overlay no OBS</b>

@@ -4,7 +4,8 @@ import { migrate } from "./db/migrate.js";
 import { close as fecharBanco } from "./db/index.js";
 import { pruneExpired } from "./lib/session.js";
 import { criarApp } from "./web/app.js";
-import { iniciarSockets } from "./web/sockets.js";
+import { iniciarSockets, definirAoConectar } from "./web/sockets.js";
+import { restaurarRaidsAtivas, snapshotDoCanal } from "./domain/raid.js";
 import { iniciarSupervisor, pararSupervisor } from "./runtime/supervisor.js";
 
 const faltando = assertConfig();
@@ -25,6 +26,10 @@ await migrate();
 const app = await criarApp();
 const httpServer = createServer(app);
 iniciarSockets(httpServer);
+definirAoConectar(async (socket) => socket.emit("raid:estado", await snapshotDoCanal(socket.data.channelId)));
+
+// Raid que estava rodando quando o servidor caiu volta a contar (ou foge, se o prazo venceu).
+await restaurarRaidsAtivas();
 
 // Liga os canais que devem estar no ar (assinatura valida + Twitch conectada).
 await iniciarSupervisor();

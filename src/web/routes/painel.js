@@ -9,6 +9,7 @@ import { destroySession, cookieOptions } from "../../lib/session.js";
 import * as channels from "../../repos/channels.js";
 import * as eventos from "../../repos/eventos.js";
 import * as acessoBilling from "../../billing/access.js";
+import { esquecer as esquecerRaid } from "../../domain/raid.js";
 
 export const router = express.Router();
 
@@ -87,6 +88,7 @@ router.post("/api/painel/conta/excluir", async (req, res, next) => {
     const token = await channels.getAccessToken(canal.id).catch(() => null);
     if (token) await twitchOAuth.revoke(token);
 
+    esquecerRaid(canal.id);
     await query("delete from channels where id = $1", [canal.id]);
 
     await destroySession(req.cookies?.[config.session.cookieName]);

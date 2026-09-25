@@ -50,7 +50,7 @@ async function startPostgres(url) {
 
 async function startPglite(dir) {
   const { PGlite } = await import("@electric-sql/pglite");
-  fs.mkdirSync(dir, { recursive: true });
+  if (!dir.startsWith("memory://")) fs.mkdirSync(dir, { recursive: true });
 
   let db;
   try {

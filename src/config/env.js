@@ -43,7 +43,8 @@ export const config = {
     // Com DATABASE_URL usa Postgres de verdade (Neon/Railway/VPS).
     // Sem ela, cai no PGlite local - mesmo dialeto, zero instalacao.
     url: process.env.DATABASE_URL || null,
-    localDir: path.join(ROOT, "data", "pg"),
+    // PGLITE_DIR=memory:// deixa o banco so na memoria (os testes usam isso).
+    localDir: process.env.PGLITE_DIR || path.join(ROOT, "data", "pg"),
   },
 
   twitch: {

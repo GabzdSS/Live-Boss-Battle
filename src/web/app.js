@@ -7,6 +7,7 @@ import { router as painelRouter } from "./routes/painel.js";
 import { router as publicoRouter } from "./routes/publico.js";
 import { router as assinaturaRouter } from "./routes/painelAssinatura.js";
 import { router as webhooksRouter } from "./routes/webhooks.js";
+import { router as raidRouter } from "./routes/painelRaid.js";
 
 export async function criarApp() {
   const app = express();
@@ -22,6 +23,7 @@ export async function criarApp() {
 
   app.use(authRouter);
   app.use(painelRouter);
+  app.use(raidRouter);
   app.use(assinaturaRouter);
   app.use(webhooksRouter);
   app.use(publicoRouter);

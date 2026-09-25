@@ -4,6 +4,7 @@ import { conectarEventSub } from "../twitch/eventsub.js";
 import { emitirParaCanal } from "../web/sockets.js";
 import * as channels from "../repos/channels.js";
 import * as eventos from "../repos/eventos.js";
+import { raidDoCanal } from "../domain/raid.js";
 
 const HORAS = 60 * 60 * 1000;
 
@@ -12,8 +13,8 @@ const HORAS = 60 * 60 * 1000;
  * daquela streamer. Tudo que fala com o mundo passa pelo `ctx`, e o ctx so
  * conhece um canal - e isso que impede o golpe de um canal cair no chefao de outro.
  *
- * Etapa 1: os eventos da Twitch chegam, vao pro feed do painel e param ai.
- * A raid (dano, reembolso, overlay) se pluga em `ctx.receberGatilho` na etapa 2/3.
+ * Evento da Twitch -> golpe na raid do canal (domain/raid.js) -> feed do painel.
+ * Reembolso e FULFILLED dos resgates entram na etapa 3.
  */
 
 /** Contexto sem Twitch: o painel usa pra agir no canal mesmo com a conexao caida. */
@@ -24,8 +25,16 @@ export function criarContexto(canal, extras = {}) {
     ...extras,
   };
   ctx.receberGatilho = async (gatilho) => {
-    await eventos.registrar(canal.id, `twitch:${gatilho.origem}`, gatilho);
-    ctx.emitir("twitch-evento", { ...gatilho, at: new Date().toISOString() });
+    const resultado = await raidDoCanal(canal.id).golpear(gatilho);
+    const registro = {
+      ...gatilho,
+      resultado: resultado.ok
+        ? { ok: true, dano: resultado.danoEfetivo, critico: resultado.critico, derrotado: resultado.derrotado }
+        : { ok: false, motivo: resultado.motivo },
+    };
+    await eventos.registrar(canal.id, gatilho.origem === "teste" ? "teste" : `twitch:${gatilho.origem}`, registro);
+    ctx.emitir("twitch-evento", { ...registro, at: new Date().toISOString() });
+    return resultado;
   };
   return ctx;
 }
